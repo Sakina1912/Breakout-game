@@ -1,6 +1,7 @@
 const rulesBtn = document.getElementById('btn-rule')
 const closeBtn = document.getElementById('btn-close')
 const rules = document.getElementById('rules')
+const showScore = document.getElementById('showScore')
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
 
@@ -9,7 +10,7 @@ const brickColumn = 5
 let score = 0
 let bricks =[]
 
-
+//brick properties
 const brickInfo = {
     w: 70,
     h: 20,
@@ -18,6 +19,7 @@ const brickInfo = {
     offsetY: 60,
     visible:true
 }
+
 
 for(let i=0;i<brickRow;i++){
     bricks[i] = []
@@ -30,15 +32,18 @@ for(let i=0;i<brickRow;i++){
 
 // console.log(bricks)
 
+//ball properties
 const ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     size: 10,
     speed: 4,
     dx: 4,
-    dy: -4
+    dy: -4,
+    visible: true
 }
 
+//paddle properties
 const paddle = {
     x:canvas.width/2-40,
     y:canvas.height-20,
@@ -49,6 +54,7 @@ const paddle = {
     visible : true
 }
 
+//drawing paddle
 function drawPaddle(){
     ctx.beginPath()
     ctx.rect(paddle.x,paddle.y,paddle.w,paddle.h)
@@ -57,6 +63,7 @@ function drawPaddle(){
     ctx.closePath()
 }
 
+//drawing ball
 function drawBall(){
     ctx.beginPath()
     ctx.arc(ball.x,ball.y,ball.size,0,Math.PI*2)
@@ -65,11 +72,13 @@ function drawBall(){
     ctx.closePath()
 }
 
+//drawing score
 function drawScore(){
     ctx.font = '20px Arial'
     ctx.fillText(`Score: ${score}`,canvas.width - 100, 30)
 }
 
+//drawing bricks
 function drwaBrick(){
     bricks.forEach(column => {
         column.forEach(brick => {
@@ -82,13 +91,15 @@ function drwaBrick(){
     })
 }
 
+//Moving paddle
 function movePaddle(){
     paddle.x += paddle.dx
 
+    //right wall collision
     if(paddle.x + paddle.w > canvas.width){
         paddle.x = canvas.width - paddle.w
     }
-
+    //left wall collision
     if(paddle.x < 0){
         paddle.x=0
     }
@@ -113,6 +124,7 @@ function moveBall(){
         ball.dy = -ball.speed
     }
 
+    //breaking the brick
     bricks.forEach(column => {
         column.forEach(brick => {
             if(brick.visible){
@@ -123,25 +135,42 @@ function moveBall(){
                         ball.dy *= -1
                         brick.visible = false
                         increaseScore()
+                        
                     }
             }
         })
     })
-
-    if(ball.y + ball.size > canvas.height){
-        showAllBrick()
-        score = 0
-    }
+    // missing the ball then game reset
+    // if(ball.y + ball.size > canvas.height){
+    //     showAllBrick()
+    //     score = 0
+    // }
+    gameOver()
 }
+
+//increase score
 
 function increaseScore(){
     score++
-    
-    if(score % (brickRow * brickColumn) === 0){
+    localStorage.setItem('score',`${score}`)
+    // let getScore = localStorage.getItem('score')
+}
+
+function gameOver(){
+    if(score === brickRow * brickColumn ||  ball.y + ball.size > canvas.height){
         ball.visible = false
         paddle.visible = false 
+        unshowAllBricks()
+
+        setTimeout(()=> {
+            let getScore = localStorage.getItem('score')
+            showScore.style.display ='block'
+            showScore.innerHTML=`<h2>Congratulations! <br>your Score is '${getScore}'</h2>`
+            console.log(getScore)
+        },100)
 
         setTimeout(function (){
+            showScore.style.display = 'none'
             showAllBrick()
             score=0
             paddle.x = canvas.width/2 - 40
@@ -150,11 +179,19 @@ function increaseScore(){
             ball.y = canvas.height/2
             ball.visible = true
             paddle.visible = true
-            console.log('hi')
-        },500)
+        },5000)
     }
+
 }
 
+function unshowAllBricks(){
+    bricks.forEach(column => {
+        column.forEach(brick => {
+            brick.visible = false
+        })
+    })
+}
+//showing all the bricks
 function showAllBrick(){
     bricks.forEach(column => {
         column.forEach(brick => {
@@ -163,7 +200,9 @@ function showAllBrick(){
     })
 }
 
+//drawing everything
 function drawEverything(){
+    //clearing the canvas
     ctx.clearRect(0,0,canvas.width,canvas.height)
 
     drawBall()
@@ -172,16 +211,20 @@ function drawEverything(){
     drwaBrick()
 }
 
+//updating the canvas
 function update(){
     movePaddle()
     moveBall()
 
     drawEverything()
-
+    
+    //animating the canvas
     requestAnimationFrame(update)
 }
 
 update()
+
+
 
 function keyDown(e){
     if(e.key === 'Right' || e.key === 'ArrowRight'){
@@ -197,10 +240,10 @@ function keyUp(e){
     }
 }
 
+//key eventlistener
 document.addEventListener('keydown',keyDown)
 document.addEventListener('keyup',keyUp)
 
-
+//button eventlistener
 rulesBtn.addEventListener('click', ()=>rules.classList.add('show'))
-
 closeBtn.addEventListener('click', ()=>rules.classList.remove('show'))
